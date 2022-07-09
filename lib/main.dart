@@ -18,17 +18,25 @@ Future main() async {
 
 //firebase emulators:start --import=./firebase-data --export-on-exit
 Future _connectToFirebaseEmulator() async {
-  const fireStorePort = "8090";
-  const authPort = 9099;
-  const storagePort = 9199;
-  final localHost = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+  var firebaseConfig = await readJsonFile('firebase.json');
+  final fireStorePort = firebaseConfig['emulators']['firestore']['port'];
+  final authPort = firebaseConfig['emulators']['auth']['port'];
+  final storagePort = firebaseConfig['emulators']['storage']['port'];
+  final localHost = Platform.isAndroid
+      ? '10.0.2.2'
+      : firebaseConfig['emulators']['storage']['host'];
+
   FirebaseFirestore.instance.settings = Settings(
       host: "$localHost:$fireStorePort",
       sslEnabled: false,
-      persistenceEnabled: true);
-
+      persistenceEnabled: false);
   await FirebaseStorage.instance.useStorageEmulator(localHost, storagePort);
   await FirebaseAuth.instance.useAuthEmulator(localHost, authPort);
+}
+
+dynamic readJsonFile(String filePath) async {
+  final String response = await rootBundle.loadString(filePath);
+  return await json.decode(response) as dynamic;
 }
 
 class MyApp extends StatelessWidget {
